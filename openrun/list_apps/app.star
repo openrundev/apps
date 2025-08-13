@@ -1,11 +1,11 @@
-load("clace.in", "clace")
+load("openrun.in", "openrun")
 
 app = ace.app("List Apps", custom_layout=True,
               routes=[
                 ace.html("/", partial="search_results")
               ],
               permissions=[
-                  ace.permission("clace.in", "list_apps"),
+                  ace.permission("openrun.in", "list_apps"),
               ],
               style=ace.style("daisyui", themes=["emerald", "night"])
        )
@@ -22,5 +22,5 @@ def handler(req):
         "query": query,
         "internal": internal,
         "path": path,
-        "apps": clace.list_apps(query, path, internal).value
+        "apps": openrun.list_apps(query, path, internal).value
     }

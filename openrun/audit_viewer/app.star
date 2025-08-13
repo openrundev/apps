@@ -1,13 +1,13 @@
-load("clace.in", "clace")
+load("openrun.in", "openrun")
 
-app = ace.app("Clace Audit Events", custom_layout=True,
+app = ace.app("OpenRun Audit Events", custom_layout=True,
               routes=[
                 ace.html("/", partial="audit_body")
               ],
               permissions=[
-                  ace.permission("clace.in", "list_all_apps"),
-                  ace.permission("clace.in", "list_operations"),
-                  ace.permission("clace.in", "list_audit_events"),
+                  ace.permission("openrun.in", "list_all_apps"),
+                  ace.permission("openrun.in", "list_operations"),
+                  ace.permission("openrun.in", "list_audit_events"),
               ],
               style=ace.style("daisyui", themes=["emerald", "night"])
        )
@@ -16,15 +16,15 @@ def query(req, key):
     return req.Query.get(key)[0] if req.Query.get(key) else ""
 
 def handler(req):
-    all_apps = clace.list_all_apps()
+    all_apps = openrun.list_all_apps()
     if all_apps.error:
         ace.response(all_apps.error, code=500)
 
-    operations = clace.list_operations()
+    operations = openrun.list_operations()
     if operations.error:
         ace.response(operations.error, code=500)
 
-    ret = clace.list_audit_events(app_glob=query(req, "appGlob"),
+    ret = openrun.list_audit_events(app_glob=query(req, "appGlob"),
                                      user_id=query(req, "userId"),
                                      event_type=query(req, "eventType"),
                                      operation=query(req, "operation"),
