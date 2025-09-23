@@ -142,7 +142,8 @@
                       {{ if eq $i (sub (len $app.path_split) 1) }}
                         {{ $p }}
                       {{ else }}
-                        📂 {{ $p }}:
+                        📂
+                        {{ $p }}
                       {{ end }}
                     {{ end }}
                   </a>
@@ -154,6 +155,20 @@
           <div class="flex items-center justify-between w-full">
             <div class="text-xs font-mono">
               <br />
+              {{ if ne .git_sha "" }}
+                <div class="tooltip break-words" data-tip="{{ .git_message }}">
+                  <p class="text-left text-xs font-mono">
+                    Sha&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:
+                    {{ substr 0 12 .git_sha }}
+                  </p>
+                </div>
+              {{ end }}
+              {{ if and (ne .git_branch "") (ne .git_branch "main") }}
+                <p class="text-left text-xs font-mono">
+                  Branch&nbsp;&nbsp;:
+                  {{ .git_branch }}
+                </p>
+              {{ end }}
               {{ if ne .version 0 }}
                 {{ if .version_mismatch }}
                   <p
@@ -175,6 +190,11 @@
                   {{ .spec }}
                 </p>
               {{ end }}
+              {{ if .is_dev }}
+                <p class="text-left break-anywhere">
+                  Mode&nbsp;&nbsp;&nbsp;&nbsp;: DEV
+                </p>
+              {{ end }}
 
             </div>
 
@@ -185,14 +205,6 @@
             </div>
           </div>
 
-          {{ if ne .git_sha "" }}
-            <div class="tooltip break-words" data-tip="{{ .git_message }}">
-              <p class="text-left text-xs font-mono">
-                Sha:{{ .git_sha }}
-              </p>
-            </div>
-          {{ end }}
-
           {{ if and (ne .source "-") (ne .source "") }}
             {{ $source_path := .source }}
             {{ if ne .star_base "" }}
@@ -200,7 +212,7 @@
             {{ end }}
             {{ if eq .source_url "" }}
               <div class="tooltip" data-tip="Source Code Path">
-                <code class="block text-left text-sm break-words">
+                <code class="block pt-4 text-left text-sm break-words">
                   {{ $source_path }}
                 </code>
               </div>
