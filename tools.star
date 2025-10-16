@@ -1,7 +1,7 @@
 # Declarative app config for OpenRun tools, install by running
 #   openrun apply --approve github.com/openrundev/apps/tools.star
 
-def create_app(app_path, source_path, include_all_option=False):
+def create_app(app_path, source_path):
   path_split = app_path.split(":") # split out the domain name
   path = path_split[1] if len(path_split) == 2 else path_split[0]
 
