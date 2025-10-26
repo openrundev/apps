@@ -195,7 +195,12 @@
                   Mode&nbsp;&nbsp;&nbsp;&nbsp;: DEV
                 </p>
               {{ end }}
-
+              <div class="tooltip break-words" data-tip="{{ .update_time }}">
+                <p class="text-left text-xs font-mono">
+                  Updated&nbsp;:
+                  {{ .update_age }}
+                </p>
+              </div>
             </div>
 
             <div class="justify-right">
