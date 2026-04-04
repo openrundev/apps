@@ -22,5 +22,7 @@ def handler(req):
         "query": query,
         "internal": internal,
         "path": path,
-        "apps": openrun.list_apps(query, path, internal).value
+        "apps": openrun.list_apps(query, path, internal).value,
+        "title": param.title,
+        "show_hosted_with": param.show_hosted_with
     }
