@@ -131,12 +131,16 @@
             {{ $app := . }}
             <ul class="flex flex-wrap">
               {{ range $i, $p := .path_split }}
+                {{ $path_glob := "" }}
+                {{ if lt $i (len $app.path_split_glob) }}
+                  {{ $path_glob = index $app.path_split_glob $i }}
+                {{ end }}
                 <li>
                   <a
                     class="link link-primary text-left text-primary break-words"
-                    title="Filter apps at {{ index $app.path_split_glob $i }}"
-                    href="{{ $.AppPath }}?path={{ index $app.path_split_glob $i }}">
-                    {{ if ne (printf "%c" (index $p 0)) "/" }}
+                    title="Filter apps at {{ $path_glob }}"
+                    href="{{ $.AppPath }}?path={{ $path_glob }}">
+                    {{ if and (ne $p "") (ne (printf "%c" (index $p 0)) "/") }}
                       🌐 {{ $p }}:
                     {{ else }}
                       {{ if eq $i (sub (len $app.path_split) 1) }}
