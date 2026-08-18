@@ -1,80 +1,354 @@
 {{ define "header" }}
   <!DOCTYPE html>
-  <html data-theme="emerald" lang="en">
+  <html lang="en">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>{{ .Data.title }}</title>
 
-      <script src="{{ static "toggle.js" }}"></script>
       <script>
-            const theme = localStorage.getItem('theme');
-            const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches 
-            if (theme == 'dark' || (theme == null && systemDark)) {
-                document.documentElement.setAttribute("data-theme", "night")
-            } else {
-                document.documentElement.setAttribute("data-theme", "emerald")
-            }
-      </script> 
+        // The generated daisyui styles follow the system preference by
+        // default (light and dark themes from ace.style). Apply the
+        // persisted manual choice, if any, before styles load to avoid a
+        // flash.
+        const theme = localStorage.getItem("theme");
+        if (theme == "light" || theme == "dark") {
+          document.documentElement.setAttribute(
+            "data-theme",
+            "openrun-" + theme
+          );
+        }
+      </script>
+      <style>
+        /* Paint the page background before the stylesheets apply, so the
+           first paint does not flash white in dark mode. Values match
+           base-200 of the openrun themes */
+        html {
+          background-color: #f9fcf9;
+        }
+        html[data-theme="openrun-dark"] {
+          background-color: #101a13;
+          color-scheme: dark;
+        }
+        @media (prefers-color-scheme: dark) {
+          html:not([data-theme="openrun-light"]) {
+            background-color: #101a13;
+            color-scheme: dark;
+          }
+        }
+      </style>
+      <script src="{{ static "toggle.js" }}"></script>
 
-      <link rel="icon" href="/favicon.ico" type="image/x-icon">
-      <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
-      <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-      <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-      <link rel="shortcut icon" href="/favicon.ico" />
+      <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+      <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <link rel="manifest" href="/site.webmanifest" />
 
-      {{ template "openrun_gen_import" . }}
+      {{/* Brand fonts (see static/css/style.css). Plain (unhashed) paths on
+        purpose: the css url() references resolve to these exact urls, a
+        hashed static-helper href would preload a different url and download
+        the font twice */}}
+      <link
+        rel="preload"
+        href="{{ .AppPath }}/static/fonts/inter-400.woff2"
+        as="font"
+        type="font/woff2"
+        crossorigin />
+      <link
+        rel="preload"
+        href="{{ .AppPath }}/static/fonts/jetbrains-mono-400.woff2"
+        as="font"
+        type="font/woff2"
+        crossorigin />
+      <link
+        rel="preload"
+        href="{{ .AppPath }}/static/fonts/space-grotesk-700.woff2"
+        as="font"
+        type="font/woff2"
+        crossorigin />
 
+      {{/* Loads the generated tailwind css, the brand layer
+        (static/css/style.css, auto-included after it) and htmx */}}
+      {{ template "openrun_gen_import" . }}
     </head>
 
-    <!-- Full screen container -->
-    <body>
-      <div class="min-h-screen grid grid-flow-col lg:grid-cols-12 md:p-2">
-        <div class="lg:col-span-1 xl:col-span-2"></div>
+    <body class="min-h-screen bg-base-200">
+      <div class="drawer md:drawer-open">
+        <input
+          id="nav-drawer"
+          type="checkbox"
+          class="drawer-toggle"
+          tabindex="-1"
+          aria-hidden="true" />
 
-        <div class="lg:col-span-10 xl:col-span-8 w-full">
-         <div class="p-8 grid grid-cols-5">
-          <a
-            href="{{ .AppPath }}/"
-            class="col-start-2 col-span-3 text-center text-3xl font-bold text-primary">
-            {{ .Data.title }}
-          </a>
+        <div class="drawer-content min-w-0">
+          <main
+            class="mx-auto w-full max-w-6xl min-h-screen flex flex-col p-4 lg:p-8 space-y-4">
+            <!-- Header: mobile logo + title, search controls on the same
+              row from md up; below md the controls drop to a second row
+              shared with the hamburger -->
+            <div class="page-header flex items-center gap-2 flex-wrap">
+              <!-- Main content comes first in DOM order; the skip link
+                jumps forward to the folder navigation -->
+              <a href="#folder-nav" class="skip-link">Skip to folders</a>
+              <!-- Mobile logo (the sidebar carrying the full logo is
+                hidden on small screens) -->
+              <a href="{{ .AppPath }}/" class="md:hidden">
+                <img
+                  src="{{ static "openrun.png" }}"
+                  alt="OpenRun"
+                  width="600"
+                  height="325"
+                  class="h-12 w-auto" />
+              </a>
+              <a href="{{ .AppPath }}/">
+                <h1
+                  class="page-title text-2xl md:text-3xl font-bold italic tracking-tight">
+                  {{ .Data.title }}
+                </h1>
+              </a>
 
-          <div class="col-start-5 justify-self-end pt-2">
-            <label for="theme-toggle" class="swap swap-rotate" title="Switch between dark and light themes">
-              <!-- This input checkbox will be hidden -->
-              <input id="theme-toggle" class="hidden" type="checkbox" />
-    
-              <svg xmlns="http://www.w3.org/2000/svg" class="theme-dark swap-on fill-current w-5 h-5" width="24" height="24" viewBox="0 0 24 24"
-               stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-               <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M12 5l0 -2" /><path d="M17 7l1.4 -1.4" /><path d="M19 12l2 0" /><path d="M17 17l1.4 1.4" /><path d="M12 19l0 2" /><path d="M7 17l-1.4 1.4" /><path d="M6 12l-2 0" /><path d="M7 7l-1.4 -1.4" /></svg>
-    
-              <svg xmlns="http://www.w3.org/2000/svg" class="theme-light swap-off fill-current w-5 h-5" width="24" height="24" viewBox="0 0 24 24"
-               stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-               <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" /></svg>
-            </label>
-          </div>
-         </div>
+              <!-- Flex line break whenever the hamburger shows (below md):
+                the drawer button and the search controls share row two -->
+              <div class="basis-full md:hidden"></div>
 
+              {{/* A real button (not a label): keyboard operable, with
+                aria-expanded kept in sync by toggle.js */}}
+              <button
+                type="button"
+                class="btn btn-ghost btn-square md:hidden"
+                aria-label="Open the folders panel"
+                aria-controls="folder-nav"
+                aria-expanded="false"
+                onclick="toggleNavDrawer(this)">
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                  focusable="false">
+                  <path d="M4 6h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 18h16" />
+                </svg>
+              </button>
+
+              <!-- Search / filter controls -->
+              <form
+                role="search"
+                class="ml-auto flex flex-1 md:flex-none items-center justify-end gap-3 min-w-0"
+                hx-get="{{- if eq .AppPath "" -}}
+                  /
+                {{- else -}}
+                  {{ .AppPath }}
+                {{- end -}}"
+                hx-trigger="input changed delay:500ms, change"
+                hx-target="#apps"
+                hx-params="*"
+                hx-indicator="#page-progress"
+                hx-push-url="true"
+                hx-include="closest form">
+                <label
+                  class="tooltip tooltip-bottom flex items-center gap-2 cursor-pointer text-sm whitespace-nowrap"
+                  data-tip="Include staging and preview apps"
+                  for="filter-internal">
+                  <span>Show Staging</span>
+                  <input
+                    type="checkbox"
+                    {{ if eq .Data.internal true }}checked{{ end }}
+                    id="filter-internal"
+                    class="checkbox checkbox-sm"
+                    name="internal"
+                    value="true" />
+                </label>
+
+                <input
+                  class="input input-sm flex-1 min-w-0 sm:flex-none sm:w-48 sm:focus-within:w-60 transition-[width] duration-300"
+                  type="search"
+                  name="q"
+                  aria-label="Search apps"
+                  title="Substring search across name/path/source; a leading /, a :, or &quot;all&quot; switches to app path globs like /utils/** or example.com:/**"
+                  {{ if ne .Data.query "" }}value="{{ .Data.query }}"{{ end }}
+                  placeholder="Search apps…" />
+
+                <input type="hidden" name="path" value="{{ .Data.path }}" />
+              </form>
+            </div>
 {{ end }} <!-- End of "header" block -->
 
 
 {{ define "footer" }}
+            {{ if .Data.show_hosted_with }}
+              {{/* mt-auto! pins the footer to the viewport bottom on short
+                pages (important beats the space-y margin-top) */}}
+              <div class="mt-auto! pt-6 pb-2 text-center">
+                <p class="text-sm text-base-content/70">Hosted with
+                  <a class="link text-primary" href="https://openrun.dev" target="_blank" rel="noopener"> OpenRun </a>
+                </p>
+              </div>
+            {{ end }}
+          </main>
         </div>
 
-        <div class="lg:col-span-1 xl:col-span-2 w-full md:w-auto"></div>
+        <!-- Folder tree sidebar: docked (and resizable) on md+, slide-in
+          drawer below -->
+        <div class="drawer-side z-20">
+          <label
+            for="nav-drawer"
+            class="drawer-overlay"
+            aria-label="Close the folders panel"></label>
+          <aside
+            class="h-full w-64 bg-base-100 border-r border-base-300 flex flex-col">
+            <!-- Brand logo, centered as in the console sidebar -->
+            <div
+              class="px-3 py-1.5 flex items-center justify-center border-b border-base-300">
+              <a href="{{ .AppPath }}/" class="logo-mark inline-block">
+                <img
+                  src="{{ static "openrun.png" }}"
+                  alt="OpenRun"
+                  width="600"
+                  height="325"
+                  class="sidebar-logo w-auto" />
+              </a>
+            </div>
+            <div class="tree-heading px-6 pt-4 pb-2">Folders</div>
+            {{/* The tree scrolls on its own so the logo and the theme
+              footer stay in place; the wrapper is the OOB swap target:
+              the search partial re-renders the tree so it follows the
+              search results */}}
+            <nav
+              id="folder-nav"
+              aria-label="App folders"
+              tabindex="-1"
+              class="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+              <div id="folder-tree">
+                {{ template "folder_tree" . }}
+              </div>
+            </nav>
+            <!-- Sidebar footer: theme switcher -->
+            <div
+              class="border-t border-base-300 px-4 py-2.5 flex items-center justify-between">
+              <span class="text-xs text-base-content/70">Theme</span>
+              <label
+                class="swap swap-rotate btn btn-sm btn-ghost btn-circle tooltip tooltip-left"
+                data-tip="Switch between dark and light themes">
+                <input
+                  id="theme-toggle"
+                  type="checkbox"
+                  role="switch"
+                  aria-label="Light theme" />
+                <span class="swap-on" aria-hidden="true">☀️</span>
+                <span class="swap-off" aria-hidden="true">🌙</span>
+              </label>
+              <script>
+                // Set the toggle to the active theme before first paint;
+                // doing this after DOMContentLoaded plays the swap
+                // animation on every page load
+                (() => {
+                  const toggle = document.getElementById("theme-toggle");
+                  const attr =
+                    document.documentElement.getAttribute("data-theme");
+                  const systemDark =
+                    window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  toggle.checked = attr ? attr == "openrun-light" : !systemDark;
+                })();
+              </script>
+            </div>
+          </aside>
+        </div>
       </div>
-
-      {{ if .Data.show_hosted_with }}
-      <div class="p-8 text-center">
-         <p class="text-sm text-secondary-content">Hosted with 
-            <a class="link link-secondary" href="https://openrun.dev" target="_blank"> OpenRun </a>
-         </p>
-      </div>
-      {{ end }}
     </body>
   </html>
 {{ end }}
 
+
+{{/* folder_tree renders the sidebar tree rows. Context: the page context.
+  Rendered in the sidebar and re-rendered out-of-band by the search
+  partial (search_results in index.go.html) so the tree tracks the search
+*/}}
+{{ define "folder_tree" }}
+            <div class="flex flex-col gap-px">
+              {{ range .Data.tree }}
+                <a
+                  href="{{ $.AppPath }}/?path={{ .glob }}{{ if $.Data.keep_query }}&q={{ urlquery $.Data.keep_query }}{{ end }}{{ if $.Data.internal }}&internal=true{{ end }}"
+                  class="tree-row {{ if .active }}tree-active{{ end }}"
+                  {{ if .active }}aria-current="page"{{ end }}
+                  style="padding-left: calc(0.5rem + {{ .indent }}px)">
+                  {{ if .children }}
+                    <svg
+                      class="tree-caret {{ if .expanded }}open{{ end }}"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  {{ else }}
+                    <span class="tree-caret" aria-hidden="true"></span>
+                  {{ end }}
+                  {{ if .is_all }}
+                    <svg
+                      class="tree-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                      focusable="false">
+                      <rect x="3" y="3" width="7" height="7" rx="1" />
+                      <rect x="14" y="3" width="7" height="7" rx="1" />
+                      <rect x="3" y="14" width="7" height="7" rx="1" />
+                      <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    <span class="text-sm">{{ .label }}</span>
+                  {{ else if .domain }}
+                    <svg
+                      class="tree-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                      focusable="false">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20" />
+                      <path d="M2 12h20" />
+                    </svg>
+                    <span class="font-mono text-xs truncate">{{ .label }}</span>
+                  {{ else }}
+                    <svg
+                      class="tree-icon"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false">
+                      <path
+                        d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                    </svg>
+                    <span class="font-mono text-xs truncate">{{ .label }}</span>
+                  {{ end }}
+                  <span class="tree-count">{{ .count }}</span>
+                </a>
+              {{ end }}
+            </div>
+{{ end }}

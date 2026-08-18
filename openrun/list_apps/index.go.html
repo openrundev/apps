@@ -10,124 +10,88 @@
   });
 </script>
 
-<form
-  class="flex items-center justify-center pb-2"
-  hx-get="{{- if eq .AppPath "" -}}
-    /
-  {{- else -}}
-    {{ .AppPath }}
-  {{- end -}}"
-  hx-trigger="input changed delay:500ms, change"
-  hx-target="#apps"
-  hx-params="*"
-  hx-indicator=".htmx-indicator"
-  hx-push-url="true"
-  hx-include="closest form">
-  <div
-    class="tooltip tooltip-bottom flex items-center"
-    data-tip="Include staging and preview apps">
-    <label class="" for="filter-internal">Show Staging</label>
-    <input
-      type="checkbox"
-      {{ if eq .Data.internal true }}checked{{ end }}
-      id="filter-internal"
-      class="checkbox ml-1 mr-2"
-      name="internal"
-      value="true" />
-  </div>
+<p id="InfoMessage" role="alert" class="text-center text-error text-sm empty:hidden"></p>
 
-  <div
-    class="tooltip tooltip-bottom"
-    data-tip="Search by app name/install path/source path">
-    <input
-      class="input input-bordered ml-1"
-      type="search"
-      name="q"
-      {{ if ne .Data.query "" }}value="{{ .Data.query }}"{{ end }}
-      placeholder="Search apps..." />
-  </div>
-
-  <input type="hidden" name="path" id="path" value="{{ .Data.path }}" />
-</form>
-
-<p id="InfoMessage" class="text-center"></p>
-
-<div class="flex justify-center">
-  <img
-    id="spinner"
-    alt="Loading..."
-    class="htmx-indicator my-1"
-    src="{{ static "spinner.svg" }}" />
+<!-- Branded progress line shown while a search request is in flight -->
+<div class="relative">
+  <div id="page-progress" class="progress-line htmx-indicator"></div>
 </div>
 
-<div id="apps" class="grid grid-cols-1 gap-1 lg:grid-cols-2">
+<div id="apps" class="grid grid-cols-1 gap-3 lg:grid-cols-2">
   {{ block "search_results" . }}
+    {{/* On HTMX search swaps, also re-render the sidebar tree out-of-band
+      so it shows only the nodes matching the search. Guarded so the full
+      page render does not duplicate the tree inside the grid */}}
+    {{ if .Data.is_partial }}
+      <div id="folder-tree" hx-swap-oob="innerHTML">
+        {{ template "folder_tree" $ }}
+      </div>
+    {{ end }}
     {{ range .Data.apps }}
       <div
-        class="card card-compact card-bordered border-gray-500 w-full shadow-xl">
-        <div class="card-body">
-          <div class="flex justify-between">
-            <!-- Text Label -->
+        class="card border border-base-300 bg-base-100 shadow-sm w-full min-w-0">
+        <div class="card-body p-4 sm:p-5 gap-3 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <!-- App name -->
             <div
-              class="text-left tooltip break-words"
+              class="tooltip tooltip-bottom min-w-0 text-left"
               data-tip="{{ .name }} at {{ .path }}">
-              <span class="text-left text-xl font-bold text-primary"
-                >{{ substr 0 30 .name }}
+              <h2 class="card-title text-lg text-left break-words">
+                {{ substr 0 30 .name }}
                 {{ if .is_stage }}
                   (Staging)
                 {{ end }}
-              </span>
+              </h2>
             </div>
 
-            <!-- SVG Icons Wrapper -->
-            <div class="flex space-x-2">
-              <!-- Optional SVG 1 -->
+            <!-- Status badges -->
+            <div class="flex gap-1.5 shrink-0 pt-0.5">
               {{ if .is_dev }}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="icon icon-tabler icons-tabler-outline icon-tabler-code">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M7 8l-4 4l4 4" />
-                  <path d="M17 8l4 4l-4 4" />
-                  <path d="M14 4l-4 16" />
-                  <title>Dev Mode</title>
-                </svg>
+                <span
+                  class="badge badge-sm badge-soft badge-primary gap-1 font-medium"
+                  title="Dev mode app: source changes apply immediately">
+                  <svg
+                    class="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false">
+                    <path d="M8 7l-5 5l5 5" />
+                    <path d="M16 7l5 5l-5 5" />
+                  </svg>
+                  Dev
+                </span>
               {{ end }}
 
-
-              <!-- Optional SVG 2 -->
               {{ if eq .auth "none" }}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="icon icon-tabler icons-tabler-outline icon-tabler-lock-open">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
-                  <path d="M12 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                  <path d="M8 11v-5a4 4 0 0 1 8 0" />
-                  <title>No Auth</title>
-                </svg>
+                <span
+                  class="badge badge-sm badge-soft badge-warning gap-1 font-medium"
+                  title="No authentication: anyone can open this app">
+                  <svg
+                    class="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false">
+                    <rect x="4" y="11" width="16" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 7.7-1.5" />
+                  </svg>
+                  No auth
+                </span>
               {{ end }}
             </div>
           </div>
 
-          <div class="breadcrumbs text-sm">
+          <!-- Install path segments, each a filter link -->
+          <div class="breadcrumbs text-xs font-mono py-0 min-w-0">
             {{ $app := . }}
             <ul class="flex flex-wrap">
               {{ range $i, $p := .path_split }}
@@ -137,17 +101,41 @@
                 {{ end }}
                 <li>
                   <a
-                    class="link link-primary text-left text-primary break-words"
+                    class="link link-hover text-primary text-left break-all"
                     title="Filter apps at {{ $path_glob }}"
-                    href="{{ $.AppPath }}?path={{ $path_glob }}">
+                    href="{{ $.AppPath }}/?path={{ $path_glob }}{{ if $.Data.keep_query }}&q={{ urlquery $.Data.keep_query }}{{ end }}{{ if $.Data.internal }}&internal=true{{ end }}">
                     {{ if and (ne $p "") (ne (printf "%c" (index $p 0)) "/") }}
-                      🌐 {{ $p }}:
+                      <svg
+                        class="inline-block w-3.5 h-3.5 mr-0.5 align-[-0.125em]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                        focusable="false">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20" />
+                        <path d="M2 12h20" />
+                      </svg>{{ $p }}:
                     {{ else }}
                       {{ if eq $i (sub (len $app.path_split) 1) }}
                         {{ $p }}
                       {{ else }}
-                        📂
-                        {{ $p }}
+                        <svg
+                          class="inline-block w-3.5 h-3.5 mr-0.5 align-[-0.125em]"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          aria-hidden="true"
+                          focusable="false">
+                          <path
+                            d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                        </svg>{{ $p }}
                       {{ end }}
                     {{ end }}
                   </a>
@@ -156,62 +144,62 @@
             </ul>
           </div>
 
-          <div class="flex items-center justify-between w-full">
-            <div class="text-xs font-mono">
-              <br />
+          <div class="flex items-end justify-between gap-3 w-full min-w-0">
+            <!-- App details: sans labels, mono identifiers -->
+            <div
+              class="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-xs min-w-0">
               {{ if ne .git_sha "" }}
-                <div class="tooltip break-words" data-tip="{{ .git_message }}">
-                  <p class="text-left text-xs font-mono">
-                    Sha&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:
-                    {{ substr 0 12 .git_sha }}
-                  </p>
-                </div>
+                <span class="text-base-content/70">Sha</span>
+                <span
+                  class="font-mono break-all text-left"
+                  title="{{ .git_message }}">
+                  {{ substr 0 12 .git_sha }}
+                </span>
               {{ end }}
               {{ if and (ne .git_branch "") (ne .git_branch "main") }}
-                <p class="text-left text-xs font-mono">
-                  Branch&nbsp;&nbsp;:
+                <span class="text-base-content/70">Branch</span>
+                <span class="font-mono break-all text-left">
                   {{ .git_branch }}
-                </p>
+                </span>
               {{ end }}
               {{ if ne .version 0 }}
+                <span class="text-base-content/70">Version</span>
                 {{ if .version_mismatch }}
-                  <p
-                    class="text-left text-warning"
+                  <span
+                    class="text-warning tabular-nums text-left"
                     title="Staged changes to be promoted">
-                    Version&nbsp;:
                     {{ .version }}
-                  </p>
+                  </span>
                 {{ else }}
-                  <p class="text-left" title="No staged changes">
-                    Version&nbsp;:
+                  <span
+                    class="tabular-nums text-left"
+                    title="No staged changes">
                     {{ .version }}
-                  </p>
+                  </span>
                 {{ end }}
               {{ end }}
               {{ if ne .spec "" }}
-                <p class="text-left break-anywhere">
-                  Spec&nbsp;&nbsp;&nbsp;&nbsp;:
-                  {{ .spec }}
-                </p>
+                <span class="text-base-content/70">Spec</span>
+                <span class="font-mono break-all text-left">{{ .spec }}</span>
               {{ end }}
-              {{ if .is_dev }}
-                <p class="text-left break-anywhere">
-                  Mode&nbsp;&nbsp;&nbsp;&nbsp;: DEV
-                </p>
-              {{ end }}
-              <div class="tooltip break-words" data-tip="{{ .update_time }}">
-                <p class="text-left text-xs font-mono">
-                  Updated&nbsp;:
+              <span class="text-base-content/70">Updated</span>
+              <span class="text-left">
+                <span
+                  class="tooltip tooltip-right"
+                  data-tip="{{ .update_time }}">
                   {{ .update_age }}
-                </p>
-              </div>
+                </span>
+              </span>
             </div>
 
-            <div class="justify-right">
-              <a href="{{ .url }}" target="_blank">
-                <button class="btn btn-secondary btn-sm">Open</button>
-              </a>
-            </div>
+            <a
+              href="{{ .url }}"
+              target="_blank"
+              rel="noopener"
+              class="btn btn-primary btn-sm shrink-0"
+              aria-label="Open {{ .name }} in a new tab">
+              Open
+            </a>
           </div>
 
           {{ if and (ne .source "-") (ne .source "") }}
@@ -220,23 +208,33 @@
               {{ $source_path = (printf "%s#%s" .source .star_base) }}
             {{ end }}
             {{ if eq .source_url "" }}
-              <div class="tooltip" data-tip="Source Code Path">
-                <code class="block pt-4 text-left text-sm break-words">
-                  {{ $source_path }}
-                </code>
-              </div>
+              <code
+                class="block mt-1 pt-2.5 border-t border-base-300/70 text-left text-xs font-mono break-all text-base-content/70"
+                title="Source Code Path">
+                {{ $source_path }}
+              </code>
             {{ else }}
               <a
                 title="Source Code Path"
-                class="link link-secondary"
+                class="link link-hover text-primary block mt-1 pt-2.5 border-t border-base-300/70 text-left text-xs font-mono break-all"
                 href="{{ .source_url }}"
-                target="_blank">
+                target="_blank"
+                rel="noopener">
                 {{ $source_path }}
               </a>
             {{ end }}
           {{ end }}
         </div>
       </div>
+    {{ end }}
+    {{ if .Data.error }}
+      <p class="col-span-full text-center text-sm text-error py-8" role="alert">
+        {{ .Data.error }}
+      </p>
+    {{ else if not .Data.apps }}
+      <p class="col-span-full text-center text-sm text-base-content/70 py-8">
+        No apps found
+      </p>
     {{ end }}
   {{ end }}
 </div>
