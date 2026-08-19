@@ -76,6 +76,11 @@ app = ace.app("List Apps", custom_layout=True,
               permissions=[
                   ace.permission("openrun.in", "list_apps"),
               ],
+              # The static_root favicons are served under stable names, so
+              # give them a bounded cache lifetime; without it the browser
+              # refetches them on every hx-push-url history update
+              settings={"app_config": {
+                  "static_root_cache_control": "public, max-age=3600"}},
               style=ace.style("daisyui",
                               light="openrun-light",
                               dark="openrun-dark",
