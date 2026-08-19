@@ -43,6 +43,38 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	// Tree clicks fetch over htmx instead of a full page load, so close
+	// the mobile drawer explicitly. Clicks on childless rows also skip
+	// the server-side tree rebuild (the X-Tree-Skip header, see app.star
+	// regen_tree), so for those the active row highlight moves here; all
+	// other requests re-render the tree out-of-band with the right state.
+	// Delegated from the document because those rebuilds replace the tree
+	document.addEventListener('click', (event) => {
+		const link = event.target.closest('#folder-nav a');
+		if (!link) {
+			return;
+		}
+		const drawer = document.getElementById('nav-drawer');
+		if (drawer && drawer.checked) {
+			drawer.checked = false;
+			drawer.dispatchEvent(new Event('change'));
+		}
+		const headers = link.getAttribute('hx-headers');
+		if (!headers || !headers.includes('X-Tree-Skip')) {
+			return;
+		}
+		const glob = new URL(link.href).searchParams.get('path') || '';
+		for (const row of document.querySelectorAll('#folder-nav .tree-row')) {
+			const active = (new URL(row.href).searchParams.get('path') || '') == glob;
+			row.classList.toggle('tree-active', active);
+			if (active) {
+				row.setAttribute('aria-current', 'page');
+			} else {
+				row.removeAttribute('aria-current');
+			}
+		}
+	});
+
 	// Escape closes the nav drawer when it is open
 	document.addEventListener('keydown', (event) => {
 		if (event.key == 'Escape') {

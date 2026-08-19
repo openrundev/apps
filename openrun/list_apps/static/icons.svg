@@ -1,0 +1,90 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Icon sprite for the list_apps templates, referenced with
+     <svg><use href="{{ static "icons.svg" }}#name" /></svg> so the icons
+     ship once as a hashed, immutably-cached static file while still
+     drawing in currentColor. Each symbol carries its own viewBox and
+     stroke presentation; the using <svg> sets size, class and aria. -->
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- Mobile hamburger (drawer button) -->
+  <symbol
+    id="menu"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round">
+    <path d="M4 6h16" />
+    <path d="M4 12h16" />
+    <path d="M4 18h16" />
+  </symbol>
+  <!-- Sidebar tree expand caret -->
+  <symbol
+    id="caret"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    <path d="M9 6l6 6-6 6" />
+  </symbol>
+  <!-- "All apps" grid -->
+  <symbol
+    id="grid"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </symbol>
+  <!-- Domain globe (sidebar tree and card breadcrumbs) -->
+  <symbol
+    id="globe"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20" />
+    <path d="M2 12h20" />
+  </symbol>
+  <!-- Folder (sidebar tree and card breadcrumbs) -->
+  <symbol
+    id="folder"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    <path
+      d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+  </symbol>
+  <!-- Dev badge code brackets -->
+  <symbol
+    id="code"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    <path d="M8 7l-5 5l5 5" />
+    <path d="M16 7l5 5l-5 5" />
+  </symbol>
+  <!-- No-auth badge open lock -->
+  <symbol
+    id="lock-open"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 7.7-1.5" />
+  </symbol>
+</svg>

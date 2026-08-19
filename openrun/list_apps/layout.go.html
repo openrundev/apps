@@ -44,28 +44,80 @@
       <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <link rel="manifest" href="/site.webmanifest" />
 
-      {{/* Brand fonts (see static/css/style.css). Plain (unhashed) paths on
-        purpose: the css url() references resolve to these exact urls, a
-        hashed static-helper href would preload a different url and download
-        the font twice */}}
+      {{/* Brand fonts (see static/css/style.css Typography). Declared here
+        instead of in the static css so the static helper emits
+        content-hashed urls, which are served with immutable caching. The
+        above-the-fold faces are preloaded with the SAME hashed urls, so
+        each font downloads once */}}
       <link
         rel="preload"
-        href="{{ .AppPath }}/static/fonts/inter-400.woff2"
+        href="{{ static "fonts/inter-400.woff2" }}"
         as="font"
         type="font/woff2"
         crossorigin />
       <link
         rel="preload"
-        href="{{ .AppPath }}/static/fonts/jetbrains-mono-400.woff2"
+        href="{{ static "fonts/jetbrains-mono-400.woff2" }}"
         as="font"
         type="font/woff2"
         crossorigin />
       <link
         rel="preload"
-        href="{{ .AppPath }}/static/fonts/space-grotesk-700.woff2"
+        href="{{ static "fonts/space-grotesk-700.woff2" }}"
         as="font"
         type="font/woff2"
         crossorigin />
+      <style>
+        @font-face {
+          font-family: "Inter";
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url("{{ static "fonts/inter-400.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-style: normal;
+          font-weight: 500;
+          font-display: swap;
+          src: url("{{ static "fonts/inter-500.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-style: normal;
+          font-weight: 600;
+          font-display: swap;
+          src: url("{{ static "fonts/inter-600.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "Space Grotesk";
+          font-style: normal;
+          font-weight: 500;
+          font-display: swap;
+          src: url("{{ static "fonts/space-grotesk-500.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "Space Grotesk";
+          font-style: normal;
+          font-weight: 700;
+          font-display: swap;
+          src: url("{{ static "fonts/space-grotesk-700.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "JetBrains Mono";
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url("{{ static "fonts/jetbrains-mono-400.woff2" }}") format("woff2");
+        }
+        @font-face {
+          font-family: "JetBrains Mono";
+          font-style: normal;
+          font-weight: 500;
+          font-display: swap;
+          src: url("{{ static "fonts/jetbrains-mono-500.woff2" }}") format("woff2");
+        }
+      </style>
 
       {{/* Loads the generated tailwind css, the brand layer
         (static/css/style.css, auto-included after it) and htmx */}}
@@ -121,18 +173,10 @@
                 aria-controls="folder-nav"
                 aria-expanded="false"
                 onclick="toggleNavDrawer(this)">
-                <svg
-                  class="w-6 h-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  aria-hidden="true"
-                  focusable="false">
-                  <path d="M4 6h16" />
-                  <path d="M4 12h16" />
-                  <path d="M4 18h16" />
+                {{/* Icons load from the static/icons.svg sprite (hashed,
+                  cached once) and keep drawing in currentColor via use */}}
+                <svg class="w-6 h-6" aria-hidden="true" focusable="false">
+                  <use href="{{ static "icons.svg" }}#menu" />
                 </svg>
               </button>
 
@@ -174,7 +218,11 @@
                   {{ if ne .Data.query "" }}value="{{ .Data.query }}"{{ end }}
                   placeholder="Search apps…" />
 
-                <input type="hidden" name="path" value="{{ .Data.path }}" />
+                <input
+                  type="hidden"
+                  id="filter-path"
+                  name="path"
+                  value="{{ .Data.path }}" />
               </form>
             </div>
 {{ end }} <!-- End of "header" block -->
@@ -273,8 +321,31 @@
 {{ define "folder_tree" }}
             <div class="flex flex-col gap-px">
               {{ range .Data.tree }}
+                {{/* One URL for both attributes: href keeps open-in-new-tab
+                  and no-js navigation working, hx-get fetches the
+                  search_results partial into #apps (it OOB-updates the
+                  form's hidden path input and, unless skipped, the tree).
+                  Childless rows skip the tree rebuild via X-Tree-Skip
+                  (see app.star): their click cannot change which rows
+                  show, so only the grid is fetched and toggle.js moves
+                  the active row highlight */}}
+                {{ $url := printf "%s/?path=%s" $.AppPath (urlquery .glob) }}
+                {{ if $.Data.keep_query }}
+                  {{ $url = printf "%s&q=%s" $url (urlquery $.Data.keep_query) }}
+                {{ end }}
+                {{ if $.Data.internal }}
+                  {{ $url = printf "%s&internal=true" $url }}
+                {{ end }}
                 <a
-                  href="{{ $.AppPath }}/?path={{ .glob }}{{ if $.Data.keep_query }}&q={{ urlquery $.Data.keep_query }}{{ end }}{{ if $.Data.internal }}&internal=true{{ end }}"
+                  href="{{ $url }}"
+                  hx-get="{{ $url }}"
+                  hx-target="#apps"
+                  hx-swap="innerHTML show:window:top"
+                  hx-push-url="true"
+                  hx-indicator="#page-progress"
+                  {{ if not .children }}
+                    hx-headers='{"X-Tree-Skip": "true"}'
+                  {{ end }}
                   class="tree-row {{ if .active }}tree-active{{ end }}"
                   {{ if .active }}aria-current="page"{{ end }}
                   style="padding-left: calc(0.5rem + {{ .indent }}px)">
@@ -283,15 +354,9 @@
                       class="tree-caret {{ if .expanded }}open{{ end }}"
                       width="13"
                       height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
                       aria-hidden="true"
                       focusable="false">
-                      <path d="M9 6l6 6-6 6" />
+                      <use href="{{ static "icons.svg" }}#caret" />
                     </svg>
                   {{ else }}
                     <span class="tree-caret" aria-hidden="true"></span>
@@ -301,16 +366,9 @@
                       class="tree-icon"
                       width="15"
                       height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
                       aria-hidden="true"
                       focusable="false">
-                      <rect x="3" y="3" width="7" height="7" rx="1" />
-                      <rect x="14" y="3" width="7" height="7" rx="1" />
-                      <rect x="3" y="14" width="7" height="7" rx="1" />
-                      <rect x="14" y="14" width="7" height="7" rx="1" />
+                      <use href="{{ static "icons.svg" }}#grid" />
                     </svg>
                     <span class="text-sm">{{ .label }}</span>
                   {{ else if .domain }}
@@ -318,15 +376,9 @@
                       class="tree-icon"
                       width="15"
                       height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
                       aria-hidden="true"
                       focusable="false">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20" />
-                      <path d="M2 12h20" />
+                      <use href="{{ static "icons.svg" }}#globe" />
                     </svg>
                     <span class="font-mono text-xs truncate">{{ .label }}</span>
                   {{ else }}
@@ -334,16 +386,9 @@
                       class="tree-icon"
                       width="15"
                       height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
                       aria-hidden="true"
                       focusable="false">
-                      <path
-                        d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                      <use href="{{ static "icons.svg" }}#folder" />
                     </svg>
                     <span class="font-mono text-xs truncate">{{ .label }}</span>
                   {{ end }}

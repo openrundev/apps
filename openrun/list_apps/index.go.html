@@ -19,13 +19,24 @@
 
 <div id="apps" class="grid grid-cols-1 gap-3 lg:grid-cols-2">
   {{ block "search_results" . }}
-    {{/* On HTMX search swaps, also re-render the sidebar tree out-of-band
-      so it shows only the nodes matching the search. Guarded so the full
-      page render does not duplicate the tree inside the grid */}}
-    {{ if .Data.is_partial }}
+    {{/* On HTMX swaps, also re-render the sidebar tree out-of-band so it
+      tracks the search and the expansion along the active folder. Only
+      clicks on childless folder rows skip it (regen_tree false, see
+      app.star). Every partial refreshes the form's hidden path input so
+      later searches keep the clicked folder. Guarded so the full page
+      render does not duplicate them inside the grid */}}
+    {{ if and .Data.is_partial .Data.regen_tree }}
       <div id="folder-tree" hx-swap-oob="innerHTML">
         {{ template "folder_tree" $ }}
       </div>
+    {{ end }}
+    {{ if .Data.is_partial }}
+      <input
+        type="hidden"
+        id="filter-path"
+        name="path"
+        value="{{ .Data.path }}"
+        hx-swap-oob="true" />
     {{ end }}
     {{ range .Data.apps }}
       <div
@@ -50,18 +61,10 @@
                 <span
                   class="badge badge-sm badge-soft badge-primary gap-1 font-medium"
                   title="Dev mode app: source changes apply immediately">
-                  <svg
-                    class="w-3 h-3"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                    focusable="false">
-                    <path d="M8 7l-5 5l5 5" />
-                    <path d="M16 7l5 5l-5 5" />
+                  {{/* Icons load from the static/icons.svg sprite (hashed,
+                    cached once), drawing in currentColor via use */}}
+                  <svg class="w-3 h-3" aria-hidden="true" focusable="false">
+                    <use href="{{ static "icons.svg" }}#code" />
                   </svg>
                   Dev
                 </span>
@@ -71,18 +74,8 @@
                 <span
                   class="badge badge-sm badge-soft badge-warning gap-1 font-medium"
                   title="No authentication: anyone can open this app">
-                  <svg
-                    class="w-3 h-3"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                    focusable="false">
-                    <rect x="4" y="11" width="16" height="10" rx="2" />
-                    <path d="M8 11V7a4 4 0 0 1 7.7-1.5" />
+                  <svg class="w-3 h-3" aria-hidden="true" focusable="false">
+                    <use href="{{ static "icons.svg" }}#lock-open" />
                   </svg>
                   No auth
                 </span>
@@ -99,25 +92,34 @@
                 {{ if lt $i (len $app.path_split_glob) }}
                   {{ $path_glob = index $app.path_split_glob $i }}
                 {{ end }}
+                {{/* Same partial-fetch flow as the sidebar tree links
+                  (layout.go.html folder_tree): href for open-in-new-tab
+                  and no-js, hx-get swaps the results into #apps. No
+                  X-Tree-Skip here: a breadcrumb can point at a folder
+                  the tree has collapsed, so it always rebuilds the tree */}}
+                {{ $url := printf "%s/?path=%s" $.AppPath (urlquery $path_glob) }}
+                {{ if $.Data.keep_query }}
+                  {{ $url = printf "%s&q=%s" $url (urlquery $.Data.keep_query) }}
+                {{ end }}
+                {{ if $.Data.internal }}
+                  {{ $url = printf "%s&internal=true" $url }}
+                {{ end }}
                 <li>
                   <a
                     class="link link-hover text-primary text-left break-all"
                     title="Filter apps at {{ $path_glob }}"
-                    href="{{ $.AppPath }}/?path={{ $path_glob }}{{ if $.Data.keep_query }}&q={{ urlquery $.Data.keep_query }}{{ end }}{{ if $.Data.internal }}&internal=true{{ end }}">
+                    href="{{ $url }}"
+                    hx-get="{{ $url }}"
+                    hx-target="#apps"
+                    hx-swap="innerHTML show:window:top"
+                    hx-push-url="true"
+                    hx-indicator="#page-progress">
                     {{ if and (ne $p "") (ne (printf "%c" (index $p 0)) "/") }}
                       <svg
                         class="inline-block w-3.5 h-3.5 mr-0.5 align-[-0.125em]"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
                         aria-hidden="true"
                         focusable="false">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20" />
-                        <path d="M2 12h20" />
+                        <use href="{{ static "icons.svg" }}#globe" />
                       </svg>{{ $p }}:
                     {{ else }}
                       {{ if eq $i (sub (len $app.path_split) 1) }}
@@ -125,16 +127,9 @@
                       {{ else }}
                         <svg
                           class="inline-block w-3.5 h-3.5 mr-0.5 align-[-0.125em]"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
                           aria-hidden="true"
                           focusable="false">
-                          <path
-                            d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                          <use href="{{ static "icons.svg" }}#folder" />
                         </svg>{{ $p }}
                       {{ end }}
                     {{ end }}

@@ -194,21 +194,33 @@ def handler(req):
     else:
         apps = ret.value
 
-    # The sidebar tree follows the SEARCH (both modes) but not the tree's
-    # own folder selection, so folder navigation stays possible. Reuse the
-    # results when the filters are identical (no folder selected)
-    tree_path = query if is_glob else ""
-    if err:
-        tree_apps = []
-    elif list_path == tree_path:
-        tree_apps = apps
-    else:
-        tree_ret = openrun.list_apps(list_query, tree_path, internal)
-        tree_err = tree_ret.error
-        tree_apps = [] if tree_err else tree_ret.value
+    # The sidebar tree is rebuilt on every request except htmx ones that
+    # opt out with the X-Tree-Skip header: sidebar clicks on CHILDLESS
+    # folder rows (layout.go.html folder_tree). Those are the only clicks
+    # that cannot reveal hidden rows, so they fetch just the app grid and
+    # save the extra list_apps call; toggle.js moves the active row
+    # highlight for them. Searches, breadcrumb clicks and clicks on rows
+    # with children all rebuild the tree as usual
+    regen_tree = not (req.IsPartial and req.Headers.get("X-Tree-Skip"))
 
-    # Tree nodes and counts cover primary apps only, not stage/preview
-    primary = [a for a in tree_apps if a["main_app"] == ""]
+    tree = []
+    if regen_tree:
+        # The tree follows the SEARCH (both modes) but not the tree's own
+        # folder selection, so folder navigation stays possible. Reuse the
+        # results when the filters are identical (no folder selected)
+        tree_path = query if is_glob else ""
+        if err:
+            tree_apps = []
+        elif list_path == tree_path:
+            tree_apps = apps
+        else:
+            tree_ret = openrun.list_apps(list_query, tree_path, internal)
+            tree_err = tree_ret.error
+            tree_apps = [] if tree_err else tree_ret.value
+
+        # Tree nodes and counts cover primary apps only, not stage/preview
+        primary = [a for a in tree_apps if a["main_app"] == ""]
+        tree = build_tree(primary, list_path, len(primary))
 
     return {
         "query": query,
@@ -219,7 +231,8 @@ def handler(req):
         # Folder clicks keep a substring search; a glob search is itself a
         # path filter, so the clicked folder replaces it
         "keep_query": "" if is_glob else query,
-        "tree": build_tree(primary, list_path, len(primary)),
+        "tree": tree,
+        "regen_tree": regen_tree,
         "is_partial": req.IsPartial,
         "title": param.title,
         "show_hosted_with": param.show_hosted_with

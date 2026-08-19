@@ -8,60 +8,15 @@
 /* ---- Typography ---------------------------------------------------------
    Self-hosted brand type (SIL OFL, woff2 in static/fonts/): Space Grotesk
    for headings, Inter for body, JetBrains Mono for identifiers (paths,
-   shas, specs, sources). The generated tailwind layer routes every font
-   through --font-sans/--font-mono, so redefining the variables here covers
-   the preflight body default and the font-sans/font-mono utilities alike.
+   shas, specs, sources). The @font-face declarations live in the layout
+   template (layout.go.html), NOT here: a static css file can only
+   reference the fonts by their plain names, while the template's static
+   helper emits content-hashed urls which get immutable caching. The
+   generated tailwind layer routes every font through
+   --font-sans/--font-mono, so redefining the variables here covers the
+   preflight body default and the font-sans/font-mono utilities alike.
    Shipped weights only: Inter 400/500/600, Space Grotesk 500/700,
    JetBrains Mono 400/500. */
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("../fonts/inter-400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("../fonts/inter-500.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("../fonts/inter-600.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Space Grotesk";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("../fonts/space-grotesk-500.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Space Grotesk";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("../fonts/space-grotesk-700.woff2") format("woff2");
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("../fonts/jetbrains-mono-400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "JetBrains Mono";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("../fonts/jetbrains-mono-500.woff2") format("woff2");
-}
 
 :root {
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -107,11 +62,12 @@ h3:not(.font-mono),
 
 /* ---- Page title ---------------------------------------------------------
    The heading carries the brand accent fade bar, matching the console
-   screens. Width tracks the "OpenRun" prefix (em-based). */
+   screens. Full width: the heading shrink-wraps to the title text (it sits
+   in a content-sized flex item), so the bar runs exactly under the word. */
 .page-title::after {
   content: "";
   display: block;
-  width: 4.3em;
+  width: 100%;
   height: 3px;
   margin-top: 0.3rem;
   margin-bottom: 0.6rem;
