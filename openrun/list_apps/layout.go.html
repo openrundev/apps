@@ -51,7 +51,7 @@
         each font downloads once */}}
       <link
         rel="preload"
-        href="{{ static "fonts/inter-400.woff2" }}"
+        href="{{ static "fonts/schibsted-grotesk-400.woff2" }}"
         as="font"
         type="font/woff2"
         crossorigin />
@@ -69,25 +69,25 @@
         crossorigin />
       <style>
         @font-face {
-          font-family: "Inter";
+          font-family: "Schibsted Grotesk";
           font-style: normal;
           font-weight: 400;
           font-display: swap;
-          src: url("{{ static "fonts/inter-400.woff2" }}") format("woff2");
+          src: url("{{ static "fonts/schibsted-grotesk-400.woff2" }}") format("woff2");
         }
         @font-face {
-          font-family: "Inter";
+          font-family: "Schibsted Grotesk";
           font-style: normal;
           font-weight: 500;
           font-display: swap;
-          src: url("{{ static "fonts/inter-500.woff2" }}") format("woff2");
+          src: url("{{ static "fonts/schibsted-grotesk-500.woff2" }}") format("woff2");
         }
         @font-face {
-          font-family: "Inter";
+          font-family: "Schibsted Grotesk";
           font-style: normal;
           font-weight: 600;
           font-display: swap;
-          src: url("{{ static "fonts/inter-600.woff2" }}") format("woff2");
+          src: url("{{ static "fonts/schibsted-grotesk-600.woff2" }}") format("woff2");
         }
         @font-face {
           font-family: "Space Grotesk";
@@ -288,8 +288,8 @@
                   type="checkbox"
                   role="switch"
                   aria-label="Light theme" />
-                <span class="swap-on" aria-hidden="true">☀️</span>
-                <span class="swap-off" aria-hidden="true">🌙</span>
+                <span class="swap-on" aria-hidden="true">🌙</span>
+                <span class="swap-off" aria-hidden="true">☀️</span>
               </label>
               <script>
                 // Set the toggle to the active theme before first paint;

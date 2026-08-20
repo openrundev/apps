@@ -1,0 +1,39 @@
+/* Dev-harness copy of the login font stylesheet. The embedded login page
+   generates this file in Go (form_login.go buildLoginFontsCSS) with
+   content-hashed font urls for immutable caching; this copy uses plain
+   relative urls for the dev preview. Keep the rules in sync. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/schibsted-grotesk-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/schibsted-grotesk-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/schibsted-grotesk-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/space-grotesk-700.woff2") format("woff2");
+}
+:root {
+  --default-font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+.login-title {
+  font-family: "Space Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
+}
