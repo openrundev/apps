@@ -12,6 +12,8 @@
 #   /        - builtin auth variant
 #   /system  - system (admin) auth variant
 #   /error   - builtin variant with a failed-login error
+#   /expired - expired variant with the "sign in again" link back to the app
+#   /expired_nolink - expired variant when no app URL is known
 
 # OpenRun brand themes, copied verbatim from the console app (ui/console
 # app.star). Brand greens: light #00C200 (primary), dark #007700 (secondary).
@@ -92,6 +94,7 @@ def preview_data(auth_type, error):
         "ExtraHref": "static/css/login_extra.css",
         "FontsHref": "static/css/login_fonts.css",
         "LoginPath": "#",
+        "BackURL": "",
     }
 
 def builtin_preview(req):
@@ -106,6 +109,13 @@ def error_preview(req):
 def expired_preview(req):
     data = preview_data("builtin", "")
     data["State"] = ""
+    data["BackURL"] = "#"  # link back to the app the login was started from
+    return data
+
+def expired_nolink_preview(req):
+    data = preview_data("builtin", "")
+    data["State"] = ""
+    data["BackURL"] = ""
     return data
 
 # Logout page previews (served on the app domain by the openrun server)
@@ -136,6 +146,7 @@ app = ace.app("OpenRun Login",
                   ace.html("/system", full="index.go.html", handler=system_preview),
                   ace.html("/error", full="index.go.html", handler=error_preview),
                   ace.html("/expired", full="index.go.html", handler=expired_preview),
+                  ace.html("/expired_nolink", full="index.go.html", handler=expired_nolink_preview),
                   ace.html("/logout", full="logout.go.html", handler=logout_confirm_preview),
                   ace.html("/logout_done", full="logout.go.html", handler=logout_done_preview),
                   ace.html("/logout_none", full="logout.go.html", handler=logout_none_preview),
